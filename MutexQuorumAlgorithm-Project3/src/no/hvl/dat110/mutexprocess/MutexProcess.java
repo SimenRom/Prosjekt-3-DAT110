@@ -3,6 +3,7 @@ package no.hvl.dat110.mutexprocess;
 import java.io.File;
 import java.io.IOException;
 import java.rmi.AccessException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -118,17 +119,32 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 		
 		replicas.remove(this.procStubname);			// remove this process from the list
 		
-		 
+		
 		// randomize - shuffle list each time - to get random processes each time
+		Collections.shuffle(replicas);
 		
 		// multicast message to N/2 + 1 processes (random processes) - block until feedback is received
 		
+		
 		// do something with the acknowledgement you received from the voters - Idea: use the queueACK to collect GRANT/DENY messages and make sure queueACK is synchronized!!!
+		
+		synchronized (queueACK) {
+			for(int i = 0; i<n; i++) {
+				String s = replicas.get(i);
+				
+				try {
+					ProcessInterface pi = Util.registryHandle(s);
+					queueACK.add(pi.onMessageReceived(message));
+				} catch (NotBoundException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 		
 		// compute election result - Idea call majorityAcknowledged()
 		
 		
-		return false;  // change to the election result			
+		return majorityAcknowledged();  // change to the election result			
 
 	}
 	
