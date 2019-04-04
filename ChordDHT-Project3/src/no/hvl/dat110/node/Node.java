@@ -11,6 +11,7 @@ package no.hvl.dat110.node;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.InetAddress;
 //import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.AccessException;
@@ -58,8 +59,7 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 
 		fingerTable = new ArrayList<ChordNodeInterface>();
 		fileKey = new HashSet<BigInteger>();
-		// setNodeIP(InetAddress.getLocalHost().getHostAddress());	// use the IP address of the host
-		setNodeIP(nodename);										// use a different name as "IP" for single machine simulation
+		setNodeIP(InetAddress.getLocalHost().getHostAddress());		// use a different name as "IP" for single machine simulation
 		BigInteger hashvalue = Hash.hashOf(getNodeIP());			// use the SHA-1  from Hash class
 		setNodeID(hashvalue);
 		
