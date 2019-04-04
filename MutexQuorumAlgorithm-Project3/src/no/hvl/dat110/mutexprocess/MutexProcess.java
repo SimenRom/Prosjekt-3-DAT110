@@ -152,24 +152,40 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 	public Message onMessageReceived(Message message) throws RemoteException {
 		
 		// increment the local clock
-		
-		
+		incrementclock();
 		// Hint: for all 3 cases, use Message to send GRANT or DENY. e.g. message.setAcknowledgement(true) = GRANT
 		
 		/**
 		 *  case 1: Receiver is not accessing shared resource and does not want to: GRANT, acquirelock and reply
 		 */
-		
+		if(!CS_BUSY && !WANTS_TO_ENTER_CS) {
+			message.setAcknowledged(true);
+			return message;
+		}
 		
 		/**
 		 *  case 2: Receiver already has access to the resource: DENY and reply
 		 */
-		
-		
+		if(CS_BUSY) {
+			message.setAcknowledged(false);
+			return message;
+		}
 		/**
 		 *  case 3: Receiver wants to access resource but is yet to (compare own multicast message to received message
 		 *  the message with lower timestamp wins) - GRANT if received is lower, acquirelock and reply
 		 */		
+		if(WANTS_TO_ENTER_CS) {
+			int mldTid = message.getClock();
+			if(mldTid < counter) {
+				message.setAcknowledged(true);
+				acquireLock();
+				return message;
+			} else {
+				message.setAcknowledged(false);
+				return message;
+			}
+		}
+		
 		
 		
 		return null;
