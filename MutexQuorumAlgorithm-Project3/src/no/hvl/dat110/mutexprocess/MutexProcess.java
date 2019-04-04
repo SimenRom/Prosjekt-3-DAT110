@@ -75,11 +75,16 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 	
 	public void acquireLock() throws RemoteException {
 		// logical clock update and set CS variable
+		incrementclock();
+		CS_BUSY = true;
 	}
 	
 	public void releaseLocks() throws RemoteException {
 		
 		// release your lock variables and logical clock update
+		CS_BUSY = false;
+		incrementclock();
+		
 	}
 	
 	public boolean requestWriteOperation(Message message) throws RemoteException {
@@ -90,10 +95,8 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 
 		WANTS_TO_ENTER_CS = true;
 		
-		// multicast read request to start the voting to N/2 + 1 replicas (majority) - optimal. You could as well send to all the replicas that have the file
-		
-		
-		return false;		// change to the election result
+		// multicast write request to start the voting to N/2 + 1 replicas (majority) - optimal. You could as well send to all the replicas that have the file
+		return multicastMessage(message, quorum);		// change to the election result
 	}
 	
 	public boolean requestReadOperation(Message message) throws RemoteException {
@@ -107,7 +110,7 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 		// multicast read request to start the voting to N/2 + 1 replicas (majority) - optimal. You could as well send to all the replicas that have the file
 		
 		
-		return false;  // change to the election result
+		return multicastMessage(message, quorum);  // change to the election result
 	}
 	
 	// multicast message to N/2 + 1 processes (random processes)
@@ -133,7 +136,7 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 	public Message onMessageReceived(Message message) throws RemoteException {
 		
 		// increment the local clock
-
+		
 		// Hint: for all 3 cases, use Message to send GRANT or DENY. e.g. message.setAcknowledgement(true) = GRANT
 		
 		/**
