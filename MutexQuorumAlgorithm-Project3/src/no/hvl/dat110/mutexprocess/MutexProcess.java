@@ -153,6 +153,7 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 		
 		// increment the local clock
 		
+		
 		// Hint: for all 3 cases, use Message to send GRANT or DENY. e.g. message.setAcknowledgement(true) = GRANT
 		
 		/**
@@ -177,13 +178,20 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 	public boolean majorityAcknowledged() throws RemoteException {
 		
 		// count the number of yes (i.e. where message.isAcknowledged = true)
+		
+		counter = 0;
+		
+		for(Message m : queueACK) {
+			if(m.isAcknowledged()) {
+				counter++;
+			}
+		}
+		
 		// check if it is the majority or not
 		// return the decision (true or false)
 
-				
-				
-				
-		return false;			// change this to the result of the vote
+		// change this to the result of the vote
+		return counter >= quorum;
 	}
 
 		
@@ -209,8 +217,16 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 	public void multicastUpdateOrReadReleaseLockOperation(Message message) throws RemoteException {
 		
 		// check the operation type:
+				
 		// if this is a write operation, multicast the update to the rest of the replicas (voters)
 		// otherwise if this is a READ operation multicast releaselocks to the replicas (voters)
+		Operations operation = new Operations(this, message);
+				
+		if(message.getOptype().equals(OperationType.WRITE)) {
+			operation.multicastOperationToReplicas(message);
+		} else if(message.getOptype().equals(OperationType.READ)) {
+			operation.multicastReadReleaseLocks();
+		}
 	}	
 	
 	@Override
