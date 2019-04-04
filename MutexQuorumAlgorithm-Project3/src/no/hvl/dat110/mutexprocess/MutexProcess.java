@@ -233,8 +233,16 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 	public void multicastUpdateOrReadReleaseLockOperation(Message message) throws RemoteException {
 		
 		// check the operation type:
+				
 		// if this is a write operation, multicast the update to the rest of the replicas (voters)
 		// otherwise if this is a READ operation multicast releaselocks to the replicas (voters)
+		Operations operation = new Operations(this, message);
+				
+		if(message.getOptype().equals(OperationType.WRITE)) {
+			operation.multicastOperationToReplicas(message);
+		} else if(message.getOptype().equals(OperationType.READ)) {
+			operation.multicastReadReleaseLocks();
+		}
 	}	
 	
 	@Override
