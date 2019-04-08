@@ -113,39 +113,47 @@ public class FileManager extends Thread {
 	public boolean requestToReadFileFromAnyActiveNode(String filename) throws RemoteException, NotBoundException {
 		
 		// get all the activenodes that have the file (replicas) i.e. requestActiveNodesForFile(String filename)
+		Set<Message> aktiveNoder = requestActiveNodesForFile(filename);
 			
 		// choose any available node
+		Message nodeMsg = new ArrayList<>(aktiveNoder).get(0);
 		
 		// locate the registry and see if the node is still active by retrieving its remote object
+		ChordNodeInterface node = (ChordNodeInterface) Util.locateRegistry(nodeMsg.getNodeIP()).lookup(nodeMsg.getNodeID().toString());
 		
 		// build the operation to be performed - Read and request for votes in existing active node message
+		Message melding = nodeMsg;
+		melding.setOptype(OperationType.READ);
 		
 		// set the active nodes holding replica files in the contact node (setActiveNodesForFile)
+		node.setActiveNodesForFile(aktiveNoder);
  		
 		// set the NodeIP in the message (replace ip with )
-		
+		melding.setNodeID(node.getNodeID());
 		
 		// send a request to a node and get the voters decision
+		boolean decision = node.requestReadOperation(melding);
 		
 		// put the decision back in the message
+		melding.setAcknowledged(decision);
 		
 		// multicast voters' decision to the rest of the nodes
+		node.multicastVotersDecision(melding);
 		
 		// if majority votes
-		
+		if (melding.isAcknowledged()){
 		// acquire lock to CS and also increments localclock
-		
+			node.acquireLock();
 		// perform operation by calling Operations class
-		
 		// optional: retrieve content of file on local resource
-		
 		// send message to let replicas release read lock they are holding
-		
+			Operations operations = new Operations(node, melding, aktiveNoder);
+			operations.performOperation();
+			operations.multicastReadReleaseLocks();
 		// release locks after operations
-		
-			
-			
-		return false;		// change to your final answer
+			node.releaseLocks();
+		}
+		return melding.isAcknowledged();		// change to your final answer
 	}
 	
 	public boolean requestWriteToFileFromAnyActiveNode(String filename, String newcontent) throws RemoteException, NotBoundException {
