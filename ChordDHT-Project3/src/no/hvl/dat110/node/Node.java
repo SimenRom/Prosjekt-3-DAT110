@@ -412,6 +412,10 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 		// release CS lock if voter initiator says he was denied access bcos he lacks majority votes
 		// otherwise lock is kept
 
+		if(!message.isAcknowledged()) {
+			releaseLocks();
+		}
+		
 	}
 
 	@Override
@@ -445,7 +449,21 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 	public void multicastVotersDecision(Message message) throws RemoteException {	
 		
 		// multicast voters decision to the rest of the replicas (i.e activenodesforfile)
-
+		
+		ArrayList<Message> replicas = new ArrayList<Message>(activenodesforfile);
+		
+		for (Message activenodes : replicas) {
+			String ip = activenodes.getNodeIP();
+			String id = activenodes.getNodeID().toString();
+			
+			try {
+				Registry registry = Util.locateRegistry(ip);
+				ChordNodeInterface node = (ChordNodeInterface) registry.lookup(id);
+			} catch(NotBoundException e) {
+				e.printStackTrace();
+			}
+			
+		}
 
 	}
 
