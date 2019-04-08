@@ -345,28 +345,44 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 	public Message onMessageReceived(Message message) throws RemoteException {
 		
 		// increment the local clock
+				incrementclock();
 
-		// Hint: for all the 3 cases, use Message to send GRANT or DENY. e.g. message.setAcknowledgement(true) = GRANT
-		
-		/**
-		 *  case 1: Receiver is not accessing shared resource and does not want to: GRANT, acquirelock and reply
-		 */
-		
-		
-		/**
-		 *  case 2: Receiver already has access to the resource: DENY and reply
-		 */
-		
-		
-		/**
-		 *  case 3: Receiver wants to access resource but is yet to (compare own multicast message to received message
-		 *  the message with lower timestamp wins) - GRANT if received is lower, acquirelock and reply
-		 */		
-		
-		
-		return null;
-		
+				// Hint: for all the 3 cases, use Message to send GRANT or DENY. e.g. message.setAcknowledgement(true) = GRANT
+				
+				/**
+				 *  case 1: Receiver is not accessing shared resource and does not want to: GRANT, acquirelock and reply
+				 */ 
+				if(!CS_BUSY && !WANTS_TO_ENTER_CS) {
+					message.setAcknowledged(true);
+					acquireLock();
+					return message;
+				}
+				
+				/**
+				 *  case 2: Receiver already has access to the resource: DENY and reply
+				 */
+				if(CS_BUSY) {
+					message.setAcknowledged(false);
+					return message;
+				}
+				
+				/**
+				 *  case 3: Receiver wants to access resource but is yet to (compare own multicast message to received message
+				 *  the message with lower timestamp wins) - GRANT if received is lower, acquirelock and reply
+				 */		
+				if(WANTS_TO_ENTER_CS) {
+					if(message.getClock() < counter) {
+						message.setAcknowledged(true);
+						return message;
+					} else {
+						message.setAcknowledged(false);
+						acquireLock();
+						return message;
+					}
+				}
+				return null;
 	}
+
 	
 	@Override
 	public boolean majorityAcknowledged() throws RemoteException {
@@ -400,10 +416,14 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 
 	@Override
 	public void onReceivedUpdateOperation(Message message) throws RemoteException {
-		
 		// check the operation type: we expect a WRITE operation to do this. 
 		// perform operation by using the Operations class 
 		// Release locks after this operation
+		if(message.getOptype() == OperationType.WRITE) {
+			Operations operasjon = new Operations(this, message, activenodesforfile);
+			operasjon.performOperation();
+			releaseLocks();
+		}
 		
 	}
 	
