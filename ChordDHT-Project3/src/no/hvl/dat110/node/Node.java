@@ -15,6 +15,7 @@ import java.net.InetAddress;
 //import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.AccessException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -312,7 +313,32 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 		
 		// the same as MutexProcess - see MutexProcess
 		
-		return false;
+
+		
+		activenodesforfile.remove(this);
+		
+		ArrayList<Message> replicas = new ArrayList<Message>(activenodesforfile);
+		
+		Collections.shuffle(replicas);
+		
+		synchronized (queueACK){
+            for (int i = 0; i < replicas.size(); i++){
+
+            	Registry registry = Util.locateRegistry(replicas.get(i).getNodeIP());
+				ChordNodeInterface node = null;
+				try {
+					node = (ChordNodeInterface) registry.lookup(replicas.get(i).getNodeID().toString());
+				} catch (NotBoundException e) {
+					e.printStackTrace();
+				}
+
+				Message reply = node.onMessageReceived(message);
+                queueACK.add(reply);
+            }
+        }
+		
+		return majorityAcknowledged();
+	
 	}
 	
 	@Override
