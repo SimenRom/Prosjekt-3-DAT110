@@ -429,7 +429,13 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 	
 	@Override
 	public void multicastUpdateOrReadReleaseLockOperation(Message message) throws RemoteException {
-		
+		Operations operasjon = new Operations(this, message, activenodesforfile);
+		if(message.getOptype() == OperationType.WRITE) {
+			operasjon.multicastOperationToReplicas(message);
+		} else if (message.getOptype() == OperationType.READ) {
+			operasjon.multicastReadReleaseLocks();
+		}
+		return;
 		// check the operation type:
 		// if this is a write operation, multicast the update to the rest of the replicas (voters)
 		// otherwise if this is a READ operation multicast releaselocks to the replicas (voters)
