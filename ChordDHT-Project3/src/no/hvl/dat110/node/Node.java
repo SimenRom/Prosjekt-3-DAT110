@@ -344,15 +344,17 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 	
 	@Override
 	public boolean majorityAcknowledged() throws RemoteException {
+		int antallYes = 0;
+		for(Message mes : queueACK) {
+			if(mes.isAcknowledged()) {
+				antallYes++;
+			}
+		}
+		return (antallYes > queueACK.size());
 		
 		// count the number of yes (i.e. where message.isAcknowledged = true)
 		// check if it is the majority or not
 		// return the decision (true or false)
-
-						
-						
-						
-		return false;			// change this to the result of the vote
 	}
 
 	@Override
