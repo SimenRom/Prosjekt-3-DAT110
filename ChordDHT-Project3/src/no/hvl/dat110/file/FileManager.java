@@ -168,37 +168,63 @@ public class FileManager extends Thread {
 	}
 	
 	public boolean requestWriteToFileFromAnyActiveNode(String filename, String newcontent) throws RemoteException, NotBoundException {
-		
+
 		// get all the activenodes that have the file (replicas) i.e. requestActiveNodesForFile(String filename)
+		Set<Message> aktiveNoder = requestActiveNodesForFile(filename);
 		
 		// choose any available node
+		Message melding = new ArrayList<>(aktiveNoder).get(0);
 		
 		// locate the registry and see if the node is still active by retrieving its remote object
+		ChordNodeInterface node = (ChordNodeInterface) Util.locateRegistry(melding.getNodeIP()).lookup(melding.getNodeIP());
 		
 		// build the operation to be performed - Read and request for votes in existing active node message
+		melding.setOptype(OperationType.WRITE);
+		melding.setNewcontent(newcontent);
 		
 		// set the active nodes holding replica files in the contact node (setActiveNodesForFile)
- 		
-		// set the NodeIP in the message (replace ip with )
+ 		node.setActiveNodesForFile(aktiveNoder);
 		
+		// set the NodeIP in the message (replace ip with )
+		melding.setNodeIP(node.getNodeIP());
 		
 		// send a request to a node and get the voters decision
+		boolean godtatt = node.requestWriteOperation(melding);
 		
 		// put the decision back in the message
+		melding.setAcknowledged(godtatt);
 		
 		// multicast voters' decision to the rest of the nodes
+		node.multicastVotersDecision(melding);
 		
 		// if majority votes
+		if(godtatt) {
+			node.acquireLock();
+			node.incrementclock();
+			Operations op = new Operations(node, melding, aktiveNoder);
+			op.performOperation();
+			try {
+				distributeReplicaFiles();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			op.multicastReadReleaseLocks();
+			node.releaseLocks();
+		}
 		
 		// acquire lock to CS and also increments localclock
+		//above
 		
 		// perform operation by calling Operations class
+		//above
 		
 		// update replicas and let replicas release CS lock they are holding
+		//above
 		
 		// release locks after operations
+		//above
 		
-		return false;  // change to your final answer
+		return godtatt;  // change to your final answer
 
 	}
 
