@@ -90,14 +90,25 @@ public class FileManager extends Thread {
 		// generate the N replica keyids from the filename
 		
 		// create replicas
+		createReplicaFiles(filename);
+		
+		Set<Message> messages = new HashSet<>();
 		
 		// findsuccessors for each file replica and save the result (fileID) for each successor 
-		
-		// if we find the successor node of fileID, we can retrieve the message associated with a fileID by calling the getFilesMetadata() of chordnode.
-		
-		// save the message in a list but eliminate duplicated entries. e.g a node may be repeated because it maps more than one replicas to its id. (use checkDuplicateActiveNode)
-		
-		return null;	// return value is a Set of type Message		
+		for(BigInteger keyid : replicafiles) {
+			ChordNodeInterface node = chordnode.findSuccessor(keyid);
+			// if we find the successor node of fileID, we can retrieve the message associated with a fileID by calling the getFilesMetadata() of chordnode.
+			if(node != null) {
+				Message message = node.getFilesMetadata().get(keyid);
+				
+				// save the message in a list but eliminate duplicated entries. e.g a node may be repeated because it maps more than one replicas to its id. (use checkDuplicateActiveNode)
+				if(message != null && !checkDuplicateActiveNode(messages, message)) {
+					messages.add(message);
+				}
+			}
+		}
+				
+		return messages;	// return value is a Set of type Message		
 	}
 	
 	private boolean checkDuplicateActiveNode(Set<Message> activenodesdata, Message nodetocheck) {
