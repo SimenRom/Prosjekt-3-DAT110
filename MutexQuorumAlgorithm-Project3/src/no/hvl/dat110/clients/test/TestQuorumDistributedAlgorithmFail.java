@@ -83,7 +83,7 @@ class TestQuorumDistributedAlgorithmFail {
 		
 		// a read request comes to a particular process - go through the voting process
 		boolean decision = p6.requestReadOperation(rmessage); 		// get the voters' decision
-		Assertions.assertFalse(decision);	//decision						// this must fail (i.e. decision = false)		
+		Assertions.assertTrue(decision);	//decision						// this must fail (i.e. decision = false)		
 
 	}
 	
