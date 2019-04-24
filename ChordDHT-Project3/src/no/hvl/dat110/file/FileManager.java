@@ -176,7 +176,7 @@ public class FileManager extends Thread {
 		Message melding = new ArrayList<>(aktiveNoder).get(0);
 		
 		// locate the registry and see if the node is still active by retrieving its remote object
-		ChordNodeInterface node = (ChordNodeInterface) Util.locateRegistry(melding.getNodeIP()).lookup(melding.getNodeIP());
+		ChordNodeInterface node = (ChordNodeInterface) Util.locateRegistry(melding.getNodeIP()).lookup(melding.getNodeIP().toString());
 		
 		// build the operation to be performed - Read and request for votes in existing active node message
 		melding.setOptype(OperationType.WRITE);
