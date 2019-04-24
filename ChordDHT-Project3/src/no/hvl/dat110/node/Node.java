@@ -322,6 +322,7 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 		Collections.shuffle(replicas);
 		
 		synchronized (queueACK){
+			queueACK.clear();
             for (int i = 0; i < replicas.size(); i++){
 
             	Registry registry = Util.locateRegistry(replicas.get(i).getNodeIP());
@@ -373,6 +374,7 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 				if(WANTS_TO_ENTER_CS) {
 					if(message.getClock() < counter) {
 						message.setAcknowledged(true);
+						acquireLock();
 						return message;
 					} else {
 						message.setAcknowledged(false);
@@ -387,6 +389,7 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 	@Override
 	public boolean majorityAcknowledged() throws RemoteException {
 		int antallYes = 0;
+		queue.clear();
 		for(Message mes : queueACK) {
 			if(mes.isAcknowledged()) {
 				antallYes++;

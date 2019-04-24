@@ -129,6 +129,7 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 		// do something with the acknowledgement you received from the voters - Idea: use the queueACK to collect GRANT/DENY messages and make sure queueACK is synchronized!!!
 		
 		synchronized (queueACK) {
+			queueACK.clear();
 			for(int i = 0; i<n; i++) {
 				String s = replicas.get(i);
 				
@@ -178,6 +179,7 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 			int mldTid = message.getClock();
 			if(mldTid < counter) {
 				message.setAcknowledged(true);
+				acquireLock();
 				return message;
 			} else {
 				message.setAcknowledged(false);
@@ -194,6 +196,7 @@ public class MutexProcess extends UnicastRemoteObject implements ProcessInterfac
 		// return the decision (true or false)
 		// change this to the result of the vote
 		counter = 0;
+		queueACK.clear();
 		for(Message m : queueACK) {
 			if(m.isAcknowledged()) {
 				counter++;
