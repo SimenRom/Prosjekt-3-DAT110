@@ -60,7 +60,7 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 
 		fingerTable = new ArrayList<ChordNodeInterface>();
 		fileKey = new HashSet<BigInteger>();
-		setNodeIP(InetAddress.getLocalHost().getHostAddress());		// use a different name as "IP" for single machine simulation
+		setNodeIP(nodename);		// use a different name as "IP" for single machine simulation | InetAddress.getLocalHost().getHostAddress()
 		BigInteger hashvalue = Hash.hashOf(getNodeIP());			// use the SHA-1  from Hash class
 		setNodeID(hashvalue);
 		
@@ -277,6 +277,7 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 	public void releaseLocks() throws RemoteException {
 		CS_BUSY = false;
 		WANTS_TO_ENTER_CS = false;
+		incrementclock();
 	}
 	
 	@Override
@@ -454,18 +455,21 @@ public class Node extends UnicastRemoteObject implements ChordNodeInterface {
 		// multicast voters decision to the rest of the replicas (i.e activenodesforfile)
 		
 		ArrayList<Message> replicas = new ArrayList<Message>(activenodesforfile);
-		
-		for (Message activenodes : replicas) {
+		int it = 0;
+		Message activenodes;
+		while (replicas.size()/2 >= it) {
+			activenodes = replicas.get(it);
 			String ip = activenodes.getNodeIP();
 			String id = activenodes.getNodeID().toString();
 			
 			try {
 				Registry registry = Util.locateRegistry(ip);
 				ChordNodeInterface node = (ChordNodeInterface) registry.lookup(id);
+				node.onReceivedVotersDecision(message);
 			} catch(NotBoundException e) {
 				e.printStackTrace();
 			}
-			
+			it++;
 		}
 
 	}
